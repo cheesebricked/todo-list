@@ -1,21 +1,28 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { NewTodoForm } from "./NewTodoForm"
 import "./styles.css"
+import { TodoList } from "./TodoList"
 
 export default function App() {
-  const [newItem, setNewItem] = useState("") // returns a list of 2 things, a value, and a function to update our value
-  const [todos, setTodos] = useState([])
 
-  function handleSubmit(e) {
-    e.preventDefault()    // prevents refreshing the page on form submit
+  const [todos, setTodos] = useState(() => {
+    const localValue = localStorage.getItem("ITEM")
+    if (localValue == null) {return []}
+    return JSON.parse(localValue)
+  })
 
-    // use current<Thing> to get the current state of something in our application
-    setTodos((currentTodos) => {
-        return [...currentTodos, { id: crypto.randomUUID(), title: newItem, completed: false }]   //crypto.randopmUUID() reades a new unique identifier
+  useEffect(() => {
+    localStorage.setItem("ITEM", JSON.stringify(todos))
+  }, [todos])     // everytime something in the property in our list changes, run this function
+
+  function addTodo(title) {
+      // use current<Thing> to get the current state of something in our application
+      setTodos((currentTodos) => {
+        return [...currentTodos, { id: crypto.randomUUID(), title, completed: false }]   //crypto.randopmUUID() reades a new unique identifier
       }
     )
-
-    setNewItem("")
   }
+
 
   function toggleTodo(id, completed) {
     setTodos(currentTodos => {
@@ -39,32 +46,9 @@ export default function App() {
 
   return (
     <>
-      <form className="new-item-form" onSubmit={handleSubmit}>
-        <div className="form-row">
-          <label htmlFor="item">New Item</label>
-          <input value={newItem} 
-                  onChange={e => setNewItem(e.target.value)}
-                  type="text" 
-                  id="item"/> {/* e is an event */}
-        </div>
-        <button className="btn">Add</button>
-      </form>
+      <NewTodoForm onSubmit={addTodo} />   {/* onSubmit is a prop. it passes something down to the component. */}
       <h1 className="header">Todo List</h1>
-      <ul className="list">
-        {todos.length === 0 && "No todos"}
-        {todos.map(todo => {
-          return (
-            <li key={todo.id}>
-              <label>
-                <input type="checkbox" checked={todo.completed} 
-                onChange={e => toggleTodo(todo.id, e.target.checked)}/>
-                {todo.title}
-              </label>
-              <button onClick={() => deleteTodo(todo.id)} className="btn btn-danger">Delete</button>
-            </li>
-          )
-        })}
-      </ul>
+      <TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo}/>
     </>
   )
 }
